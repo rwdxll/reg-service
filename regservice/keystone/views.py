@@ -122,7 +122,7 @@ class UserAPI(Resource):
             result = {"email": user.email, "enabled": user.enabled, 
                         "id": user.id, "name": user.name,
                         "sms_activation_code_time": sms_activation_code_time,
-                        "sms_activation_code": sms_activation_code}
+                        "sms_activation_code": sms_activation_code,"first_name" : first_name, "last_name" : last_name}
 
             return {"success":True, "error":"", "result":result}
         except Exception as ex:
