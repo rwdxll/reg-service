@@ -1,4 +1,4 @@
-jiocloud-registration-service (0.1~jiocloud0) precise; urgency=low
+regservice (0.1~jiocloud0) precise; urgency=low
 
   * Manual build for JioCloud.
 

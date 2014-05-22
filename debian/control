@@ -1,4 +1,4 @@
-Source: jiocloud-registration-service
+Source: regservice
 Section: net
 Priority: extra
 Maintainer: Soren Hansen <Soren.Hansen@ril.com>
