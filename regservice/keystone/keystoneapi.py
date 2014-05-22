@@ -156,5 +156,13 @@ def enable_user(user_id, keystone=None):
     return user
 
 
+def update_user(user, **data):
+    keystone = get_client()
+    manager = keystone.users
+
+    # v3 API is so much simpler...
+    user = manager.update(user, **data)
+
+    return user
 
 

@@ -51,6 +51,19 @@ class UserAPI(Resource):
             return {"success":False, "error":get_default_error_message(), "result":result}
         return {"success":True, "error":"", "result":result}
 
+    def put(self, user_id):
+        result = None
+        args = self.reqparse.parse_args()
+        try:
+            user = keystoneapi.update_user(user_id, **args)
+            result = {"email": user.email, "enabled": user.enabled, 
+                        "id": user.id, "name": user.name}
+        except Exception as ex:
+            #traceback.print_stack()
+            current_app.logger.exception(ex)
+            return {"success":False, "error":get_default_error_message(), "result":result}
+        return {"success":True, "error":"", "result":result}
+
     def get(self, user_id):
         """
         """
