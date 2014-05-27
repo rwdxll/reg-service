@@ -2,6 +2,7 @@
 
 if [ $1 == configure ]
 then
+	chown www-data:www-data /etc/apache2/conf.d/jiocloud-registration-service.conf
 	chown horizon:horizon /var/log/jiocloud-registration-service
 	chmod 775 /var/log/jiocloud-registration-service
 fi
