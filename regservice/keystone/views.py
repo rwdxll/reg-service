@@ -17,6 +17,7 @@ def get_default_error_message():
 class UserAPI(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument('name', type=str)
         self.reqparse.add_argument('email', type=str)
         self.reqparse.add_argument('password', type=str)
         self.reqparse.add_argument('first_name', type=str)
@@ -31,6 +32,8 @@ class UserAPI(Resource):
         self.reqparse.add_argument('country_code', type=str)
         self.reqparse.add_argument('sms_activation_code_time', type=str)
         self.reqparse.add_argument('sms_activation_code', type=str)
+        self.reqparse.add_argument('email_activation_code_time', type=str)
+        self.reqparse.add_argument('email_activation_code', type=str)
         super(UserAPI, self).__init__()
         
     def post(self):
@@ -80,6 +83,8 @@ class UserAPI(Resource):
         country_code = None
         sms_activation_code_time = None
         sms_activation_code = None
+        email_activation_code_time = None
+        email_activation_code = None
 
         try:
             user = keystoneapi.get_user(user_id)
@@ -131,10 +136,20 @@ class UserAPI(Resource):
                 sms_activation_code = user.sms_activation_code
             except Exception as e:
                 pass
+            try:
+                email_activation_code_time = user.email_activation_code_time
+            except Exception as e:
+                pass
+            try:
+                email_activation_code = user.email_activation_code
+            except Exception as e:
+                pass
 
             result = {"email": user.email, "enabled": user.enabled, 
                         "id": user.id, "name": user.name,
                         "phone" : phone,
+                        "email_activation_code": email_activation_code,
+                        "email_activation_code_time": email_activation_code_time,
                         "sms_activation_code_time": sms_activation_code_time,
                         "sms_activation_code": sms_activation_code,"first_name" : first_name, "last_name" : last_name}
 
