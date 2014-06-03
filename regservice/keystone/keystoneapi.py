@@ -41,7 +41,9 @@ def create_user(name, password, email=None, description=None, enabled=False, **k
     """
     project = None
     user = None
+    network = None
     role_granted = False
+    neutron = None 
     keystone = get_client()
     _user = get_user_by_name(name)
     if _user:
@@ -63,7 +65,7 @@ def create_user(name, password, email=None, description=None, enabled=False, **k
             log.exception("Exception while initializing neutron client")
             current_app.logger.exception(e)
         try:
-            create_network(neutron,domain.name)
+            network = create_network(neutron,domain.name)
         except Exception as e:
             current_app.logger.exception(e)
             log.exception("Exception while creating network %s"%(str(e)))
@@ -75,6 +77,8 @@ def create_user(name, password, email=None, description=None, enabled=False, **k
             delete_user(user)
         if project:
             delete_project(project)
+        if network:
+            delete_network(neutron,network)
         raise ex
     return user
 
@@ -103,7 +107,8 @@ def create_network(neutron,network_name):
         body_sample = {'network': {'name': network_name,
                    'admin_state_up': True}}
 
-        netw = neutron.create_network(body=body_sample)
+        network = neutron.create_network(body=body_sample)
+        return network
     except:
         log.exception("Exception was raised while creating neutron network")
 
@@ -112,6 +117,8 @@ def delete_project(id, keystone=None):
         keystone = get_client()
     keystone.projects.delete(id)
 
+def delete_network(neutron,network):
+    neutron.delete_network(network["network"]["id"])
 
 def get_unique_project_name():
     """
