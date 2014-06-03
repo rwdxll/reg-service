@@ -39,6 +39,10 @@ class UserAPI(Resource):
     def post(self):
         result = None
         args = self.reqparse.parse_args()
+        # note that user registration service creates users by passing
+        # email as value for both 'name' and 'email' fields.
+        # so remove the 'name' field from the arguments list
+        args.pop("name")
         email = args.pop("email")
         password = args.pop("password")
         try:
