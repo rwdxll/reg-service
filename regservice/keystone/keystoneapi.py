@@ -3,7 +3,7 @@ import settings
 import uuid
 import keystoneclient
 from keystoneclient.v3 import client
-
+from datetime import datetime
 
 def get_client():
     """
@@ -19,6 +19,7 @@ def _create_user(name, domain=None, project=None, password=None,
                         **kwargs):
     """
     """
+    print kwargs
     if not keystone:
         keystone = get_client()
     user = keystone.users.create(name, domain=None, project=None, password=password, 
@@ -39,7 +40,7 @@ def create_user(name, password, email=None, description=None, enabled=False, **k
         raise keystoneclient.apiclient.exceptions.Conflict("User already exist")
     try:
         domain = get_default_domain(keystone) 
-        project = create_project(domain, name, keystone)
+        project = create_project(domain, name + '-' + datetime.now().strftime('%Y%m%d%H%M%S'), keystone)
         role = get_default_role(keystone)
         ##SM:domain is optional
         user = _create_user(name, domain=domain, project=project, password=password, 
