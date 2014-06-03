@@ -4,6 +4,9 @@ import uuid
 import keystoneclient
 from keystoneclient.v3 import client
 from datetime import datetime
+from neutronclient.v2_0 import client as neutron_client
+import logging as log
+from flask import current_app
 
 def get_client():
     """
@@ -12,6 +15,12 @@ def get_client():
                     endpoint=settings.KEYSTONE_ADMIN_ENDPOINT)
     return keystone
 
+def get_neutron_client(uname,pwd,tenantname):
+    """                 
+    """                 
+    neutron = neutron_client.Client(username=uname,password=pwd,auth_url=settings.KEYSTONE_PUBLIC_V2_ENDPOINT,tenant_name=tenantname)
+    #neutron = neutron_client.Client(token=settings.KEYSTONE_ADMIN_TOKEN,auth_url=settings.KEYSTONE_PUBLIC_V2_ENDPOINT,tenant_name=tenantname)
+    return neutron
 
 def _create_user(name, domain=None, project=None, password=None,
                         email=None, description=None, enabled=None,
@@ -47,6 +56,17 @@ def create_user(name, password, email=None, description=None, enabled=False, **k
         ##SM:Specify either a domain or project, not both
         keystone.roles.grant(role, user=user, domain=None, project=project)
         role_granted = True
+        try:
+            neutron = get_neutron_client(name,password,project.name)
+        except Exception as e:
+            log.exception("Exception while initializing neutron client")
+            current_app.logger.exception(e)
+        try:
+            create_network(neutron,domain.name)
+        except Exception as e:
+            current_app.logger.exception(e)
+            log.exception("Exception while creating network %s"%(str(e)))
+        user = keystone.users.update(user=user.id,enabled=False)
     except Exception as ex:
         if role_granted:
             keystone.roles.revoke(role, user=user, domain=None, project=project)
@@ -75,6 +95,16 @@ def create_project(domain, name=None, keystone=None):
     project = keystone.projects.create(name, domain)
     return project
 
+def create_network(neutron,network_name):
+    """
+    """
+    try:
+        body_sample = {'network': {'name': network_name,
+                   'admin_state_up': True}}
+
+        netw = neutron.create_network(body=body_sample)
+    except:
+        log.exception("Exception was raised while creating neutron network")
 
 def delete_project(id, keystone=None):
     if not keystone:
