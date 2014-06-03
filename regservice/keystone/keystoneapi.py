@@ -56,6 +56,7 @@ def create_user(name, password, email=None, description=None, enabled=False, **k
         ##SM:Specify either a domain or project, not both
         keystone.roles.grant(role, user=user, domain=None, project=project)
         role_granted = True
+        user = keystone.users.update(user=user.id,enabled=True)
         try:
             neutron = get_neutron_client(name,password,project.name)
         except Exception as e:
