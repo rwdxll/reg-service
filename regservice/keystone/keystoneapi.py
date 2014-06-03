@@ -19,7 +19,6 @@ def _create_user(name, domain=None, project=None, password=None,
                         **kwargs):
     """
     """
-    print kwargs
     if not keystone:
         keystone = get_client()
     user = keystone.users.create(name, domain=None, project=None, password=password, 
