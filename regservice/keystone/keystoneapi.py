@@ -8,6 +8,11 @@ from neutronclient.v2_0 import client as neutron_client
 import logging as log
 from flask import current_app
 
+
+API_VERSION_V2 = "v2.0"
+settings._public_data["api_v2_version"] = API_VERSION_V2
+KEYSTONE_PUBLIC_V2_ENDPOINT = "http://{host_name}:{port}/{api_v2_version}".format(**settings._public_data)
+
 def get_client():
     """
     """
@@ -18,7 +23,7 @@ def get_client():
 def get_neutron_client(uname,pwd,tenantname):
     """                 
     """                 
-    neutron = neutron_client.Client(username=uname,password=pwd,auth_url=settings.KEYSTONE_PUBLIC_V2_ENDPOINT,tenant_name=tenantname)
+    neutron = neutron_client.Client(username=uname,password=pwd,auth_url=KEYSTONE_PUBLIC_V2_ENDPOINT,tenant_name=tenantname)
     #neutron = neutron_client.Client(token=settings.KEYSTONE_ADMIN_TOKEN,auth_url=settings.KEYSTONE_PUBLIC_V2_ENDPOINT,tenant_name=tenantname)
     return neutron
 
