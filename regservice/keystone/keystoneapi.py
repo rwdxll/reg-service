@@ -7,11 +7,19 @@ from datetime import datetime
 from neutronclient.v2_0 import client as neutron_client
 import logging as log
 from flask import current_app
+import copy
 
 
 API_VERSION_V2 = "v2.0"
 settings._public_data["api_v2_version"] = API_VERSION_V2
-KEYSTONE_PUBLIC_V2_ENDPOINT = "http://{host_name}:{port}/{api_v2_version}".format(**settings._public_data)
+KEYSTONE_PUBLIC_V2_ENDPOINT = settings.KEYSTONE_PUBLIC_ENDPOINT
+KEYSTONE_PUBLIC_V2_ENDPOINT = KEYSTONE_PUBLIC_V2_ENDPOINT.replace('v3','v2.0')
+
+def write_log(data):
+    f=open("/tmp/custom.log","a")
+    f.write(data)
+    f.close()	
+		
 
 def get_client():
     """
@@ -23,7 +31,12 @@ def get_client():
 def get_neutron_client(uname,pwd,tenantname):
     """                 
     """                 
-    neutron = neutron_client.Client(username=uname,password=pwd,auth_url=KEYSTONE_PUBLIC_V2_ENDPOINT,tenant_name=tenantname)
+    try:
+        neutron = neutron_client.Client(username=uname,password=pwd,auth_url=KEYSTONE_PUBLIC_V2_ENDPOINT,tenant_name=tenantname)
+        neutron.format= 'json'
+    except Exception as e:
+        current_app.logger.exception("Exception in neutron client")
+        current_app.logger.exception(e)
     #neutron = neutron_client.Client(token=settings.KEYSTONE_ADMIN_TOKEN,auth_url=settings.KEYSTONE_PUBLIC_V2_ENDPOINT,tenant_name=tenantname)
     return neutron
 
@@ -55,7 +68,8 @@ def create_user(name, password, email=None, description=None, enabled=False, **k
         raise keystoneclient.apiclient.exceptions.Conflict("User already exist")
     try:
         domain = get_default_domain(keystone) 
-        project = create_project(domain, name + '-' + datetime.now().strftime('%Y%m%d%H%M%S'), keystone)
+        tenant_name = name + '-' + datetime.now().strftime('%Y%m%d%H%M%S')
+        project = create_project(domain, tenant_name , keystone)
         role = get_default_role(keystone)
         ##SM:domain is optional
         user = _create_user(name, domain=domain, project=project, password=password, 
@@ -65,12 +79,13 @@ def create_user(name, password, email=None, description=None, enabled=False, **k
         role_granted = True
         user = keystone.users.update(user=user.id,enabled=True)
         try:
-            neutron = get_neutron_client(name,password,project.name)
+            neutron = get_neutron_client(name,password,tenant_name)
         except Exception as e:
             log.exception("Exception while initializing neutron client")
             current_app.logger.exception(e)
         try:
-            network = create_network(neutron,domain.name)
+            if neutron:
+                network = create_network(neutron,domain.name)
         except Exception as e:
             current_app.logger.exception(e)
             log.exception("Exception while creating network %s"%(str(e)))
@@ -109,13 +124,12 @@ def create_network(neutron,network_name):
     """
     """
     try:
-        body_sample = {'network': {'name': network_name,
-                   'admin_state_up': True}}
-
+        body_sample = {'network': {'name': network_name, 'admin_state_up': True}}
         network = neutron.create_network(body=body_sample)
         return network
-    except:
-        log.exception("Exception was raised while creating neutron network")
+    except Exception as e:
+        current_app.logger.exception(e)
+        current_app.logger.exception("Exception was raised while creating neutron network")
 
 def delete_project(id, keystone=None):
     if not keystone:
@@ -123,7 +137,12 @@ def delete_project(id, keystone=None):
     keystone.projects.delete(id)
 
 def delete_network(neutron,network):
-    neutron.delete_network(network["network"]["id"])
+    try:
+        neutron.delete_network(network["network"]["id"])
+    except Exception as e:
+        current_app.logger.exception("Exception while deleting network")
+        current_app.logger.exception(e)
+    
 
 def get_unique_project_name():
     """
