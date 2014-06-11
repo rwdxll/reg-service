@@ -13,7 +13,7 @@ import copy
 API_VERSION_V2 = "v2.0"
 settings._public_data["api_v2_version"] = API_VERSION_V2
 KEYSTONE_PUBLIC_V2_ENDPOINT = settings.KEYSTONE_PUBLIC_ENDPOINT
-KEYSTONE_PUBLIC_V2_ENDPOINT = KEYSTONE_PUBLIC_V2_ENDPOINT.replace('v3','v2.0')
+KEYSTONE_PUBLIC_V2_ENDPOINT = KEYSTONE_PUBLIC_V2_ENDPOINT.replace('/v3','/v2.0')
 
 def write_log(data):
     f=open("/tmp/custom.log","a")
@@ -126,6 +126,7 @@ def create_network(neutron,network_name):
     try:
         body_sample = {'network': {'name': network_name, 'admin_state_up': True}}
         network = neutron.create_network(body=body_sample)
+        neutron.create_subnet( { 'subnet' : { 'network_id' : network["network"]["id"], 'ip_version' : 4, 'cidr' : '192.168.0.0/24' } } )        
         return network
     except Exception as e:
         current_app.logger.exception(e)
