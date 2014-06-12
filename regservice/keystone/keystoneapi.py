@@ -7,11 +7,9 @@ from datetime import datetime
 from neutronclient.v2_0 import client as neutron_client
 import logging as log
 from flask import current_app
-import copy
+import time
 
 
-API_VERSION_V2 = "v2.0"
-settings._public_data["api_v2_version"] = API_VERSION_V2
 KEYSTONE_PUBLIC_V2_ENDPOINT = settings.KEYSTONE_PUBLIC_ENDPOINT
 KEYSTONE_PUBLIC_V2_ENDPOINT = KEYSTONE_PUBLIC_V2_ENDPOINT.replace('/v3','/v2.0')
 
@@ -78,6 +76,7 @@ def create_user(name, password, email=None, description=None, enabled=False, **k
         keystone.roles.grant(role, user=user, domain=None, project=project)
         role_granted = True
         user = keystone.users.update(user=user.id,enabled=True)
+        time.sleep(5)        
         try:
             neutron = get_neutron_client(name,password,tenant_name)
         except Exception as e:
@@ -127,6 +126,9 @@ def create_network(neutron,network_name):
         body_sample = {'network': {'name': network_name, 'admin_state_up': True}}
         network = neutron.create_network(body=body_sample)
         neutron.create_subnet( { 'subnet' : { 'network_id' : network["network"]["id"], 'ip_version' : 4, 'cidr' : '192.168.0.0/24' } } )        
+        ipam_body = {'ipam':{'name': "Default"}}
+        if "create_ipam" in dir(neutron): #This check is made since dev machines doesnt have contrail installed
+            neutron.create_ipam(body=ipam_body)
         return network
     except Exception as e:
         current_app.logger.exception(e)
